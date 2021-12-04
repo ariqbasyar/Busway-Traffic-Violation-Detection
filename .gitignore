@@ -189,3 +189,7 @@ pip-selfcheck.json
 !.vscode/*.code-snippets
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,jupyternotebooks,virtualenv,venv
+
+# DS_Store
+.DS_Store
+**/.DS_Store
