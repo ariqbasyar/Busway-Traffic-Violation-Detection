@@ -4,7 +4,8 @@ import torch
 import numpy as np
 import cv2
 
-from model import preprocess, detect, box_label
+from model import (preprocess, detect, box_label,
+    get_busway_box_from_prediction)
 from time import time
 from pathlib import Path
 from models.experimental import attempt_load
@@ -34,3 +35,15 @@ pred, labels = detect(model,preprocessed)
 print(f'inferenced in {(time() - start)*1E3:.2f}ms')
 # labeled_img = box_label(pred,main_img,labels)
 # plt.imshow(labeled_img)
+
+points = get_busway_box_from_prediction(pred)
+print(f'amount of convex hull points: {len(points)}')
+if points is None:
+  print("Cant make polygon from the prediction")
+# else:
+#   _img = main_img.copy()
+#   cv2.fillPoly(_img, [points], (255,0,0))
+#   alpha = 0.4
+#   image_new = cv2.addWeighted(_img, alpha, main_img, 1 - alpha, 0)
+#   plt.imshow(image_new)
+#   plt.show()

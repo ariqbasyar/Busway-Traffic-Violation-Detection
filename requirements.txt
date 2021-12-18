@@ -21,7 +21,7 @@ pandas>=1.1.4
 seaborn>=0.11.0
 
 # Geometry ------------------------------------
-Shapely>=1.8.0
+Shapely>=1.7.0
 
 # Export --------------------------------------
 # coremltools>=4.1  # CoreML export

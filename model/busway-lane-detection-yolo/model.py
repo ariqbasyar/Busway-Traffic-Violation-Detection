@@ -4,6 +4,7 @@ import torch
 
 from utils.plots import Annotator, colors
 from utils.general import non_max_suppression
+from shapely.geometry import MultiPoint
 
 def preprocess(main_img, device):
   img = cv2.cvtColor(main_img,cv2.COLOR_BGR2RGB)
@@ -58,3 +59,25 @@ def box_label(pred,img,labels):
     label = f'{labels[c]} {conf:.2f}'
     annotator.box_label(box, label, colors(c, True))
   return annotator.result()
+
+def get_middle(pred):
+  X = []
+  for p in pred:
+    x0,y0,x1,y1 = p[:4]
+    x = x0 + (x1 - x0)/2
+    y = y0 + (y1 - y0)/2
+    X.append([x,y])
+  return np.array(X,dtype=int)
+
+def get_busway_box_from_prediction(pred):
+  n_labels_predicted = len(np.unique(np.array(pred)[:,-1]))
+  if n_labels_predicted == 2:
+    X = get_middle(pred)
+
+    convex_hull = MultiPoint(X).convex_hull
+    x,y = convex_hull.exterior.xy
+
+    points = np.int32([x,y])
+    points = points.transpose()
+    return points
+  return None
