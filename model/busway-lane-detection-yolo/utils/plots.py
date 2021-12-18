@@ -74,7 +74,7 @@ class Annotator:
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
         self.pil = pil or not is_ascii(example) or is_chinese(example)
         if self.pil:  # use PIL
-            self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
+            self.im = im.copy() if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
             self.font = check_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
                                    size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
