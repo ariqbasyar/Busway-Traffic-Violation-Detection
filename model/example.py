@@ -8,7 +8,7 @@ from model import (preprocess, detect, box_label,
     get_busway_box_from_prediction)
 from time import time
 from pathlib import Path
-from model.models.experimental import attempt_load
+from models.experimental import attempt_load
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]

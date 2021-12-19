@@ -1,6 +1,5 @@
 from shapely.geometry import Point
-from model.models.experimental import attempt_load
-from model.model import (preprocess, get_middle,
+from busway_lane_detection_yolo.model import (preprocess, get_middle,
     detect, box_label, get_busway_box_from_prediction)
 
 def to_point(points):
@@ -8,3 +7,4 @@ def to_point(points):
     for point in points:
         res.append(Point(*point))
     return res
+# from vehicle_detection_yolo.model import 
