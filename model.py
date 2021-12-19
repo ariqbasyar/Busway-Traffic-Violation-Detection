@@ -39,7 +39,7 @@ def detect(model,img):
       items.append(row)
   return items
 
-def box_label(pred,img):
+def box_label(pred,img,show_label=True):
   """
     Make a box label for an image with
     given prediction [x0,y0,x1,y1,conf,index_label]
@@ -58,6 +58,8 @@ def box_label(pred,img):
     c = int(p[5])
     label = p[-1]
     text = f'{label} {conf:.2f}'
+    if show_label == False:
+        text = ''
     annotator.box_label(box, text, colors(c, True))
   return annotator.result()
 
