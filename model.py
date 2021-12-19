@@ -55,7 +55,7 @@ def box_label(pred,img):
     annotator = Annotator(img)
     box = tuple(p[:4])
     conf = p[4]
-    c = p[5]
+    c = int(p[5])
     label = p[-1]
     text = f'{label} {conf:.2f}'
     annotator.box_label(box, text, colors(c, True))
