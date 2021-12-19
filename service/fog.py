@@ -12,7 +12,6 @@ from classes import get_fog_type
 os.environ['TZ'] = 'Asia/Jakarta'
 time.tzset()
 
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]
 
@@ -28,14 +27,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 lane_model = attempt_load(lane_weight, map_location=device)
 vehicle_model = attempt_load(vehicle_weight, map_location=device)
 
-_type = 1
+_type = 1 # see classes.get_fog_type
 
-ip = '192.168.1.250'
+HOST = '192.168.1.250'
+PORT = 5000
 
 s = socket.socket()
-s.connect((ip, 8888))
+s.connect((HOST, PORT))
 
 for filename in os.listdir(images):
     img = cv2.imread(str(images / filename))
     Detection = get_fog_type(_type)
-    # detection = Detection(img,device,lane_model,vehicle_model,s)
+    detection = Detection(img,device,lane_model,vehicle_model,s)
+    detection.perform_detection()

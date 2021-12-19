@@ -2,16 +2,22 @@ import numpy as np
 
 from time import time
 
-from torch._C import _get_model_bytecode_version
+import torch
+
 from model import (preprocess, detect, get_busway_box_from_prediction,
     get_middle, to_point)
 
-INTEGER_TO_BYTES = (16,'little')
+BYTES_ARRAY = 16
+ENDIAN = 'little'
+INTEGER_TO_BYTES = (BYTES_ARRAY,ENDIAN)
 
 class BaseDetection:
-    def __init__(self,img,device,lane_model,vehicle_model,socket,start=None):
+    def __init__(self,img,device=None,lane_model=None,vehicle_model=None,
+            socket=None,start=None):
         self.img = img
         self.device = device
+        if not device:
+            self.device = torch.device('cpu')
         self.lane_model = lane_model
         self.vehicle_model = vehicle_model
         self.socket = socket
@@ -26,21 +32,6 @@ class BaseDetection:
         self.vehicle_points = None
         self.count_violations = -1
         self.end = None
-
-    def preprocess(self):
-        raise NotImplementedError()
-
-    def detect_lane(self):
-        raise NotImplementedError()
-
-    def detect_car(self):
-        raise NotImplementedError()
-
-    def get_violations(self):
-        raise NotImplementedError()
-
-    def send(self):
-        raise NotImplementedError()
 
     def perform_detection(self):
         self.preprocess()
@@ -78,8 +69,12 @@ class OnlySendPreprocess:
     def send(self):
         payload_time = self.start.to_bytes(*INTEGER_TO_BYTES)
 
-        arr_preprocessed = np.array(self.preprocessed)
+        data = self.preprocessed
+        if self.device.type == 'cuda':
+            data = self.preprocessed.cpu()
+        arr_preprocessed = np.array(data).tobytes()
         size_preprocessed = len(arr_preprocessed)
+        print(size_preprocessed)
         payload_image = size_preprocessed.to_bytes(*INTEGER_TO_BYTES)\
             + arr_preprocessed
 
@@ -89,7 +84,9 @@ class OnlySendPreprocess:
 class FogOnlyPreprocessing(BaseDetection,
                             OnlyPreprocess,
                             OnlySendPreprocess):
-    pass
+    def perform_detection(self):
+        self.preprocess()
+        self.send()
 
 class ServerOnlyDetect(BaseDetection,
                         OnlyDetectLane,
