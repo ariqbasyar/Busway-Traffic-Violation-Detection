@@ -4,7 +4,7 @@ import torch
 
 from utils.plots import Annotator, colors
 from utils.general import non_max_suppression
-from shapely.geometry import MultiPoint
+from shapely.geometry import MultiPoint, Point
 
 def preprocess(main_img, device):
   img = cv2.resize(main_img, (512,512))

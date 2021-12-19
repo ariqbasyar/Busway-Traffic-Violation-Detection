@@ -1,9 +1,8 @@
+import torch
 import numpy as np
 
 from time import time
-
-import torch
-
+from io import BytesIO
 from model import (preprocess, detect, get_busway_box_from_prediction,
     get_middle, to_point)
 
@@ -72,11 +71,13 @@ class OnlySendPreprocess:
         data = self.preprocessed
         if self.device.type == 'cuda':
             data = self.preprocessed.cpu()
-        arr_preprocessed = np.array(data).tobytes()
-        size_preprocessed = len(arr_preprocessed)
-        print(size_preprocessed)
-        payload_image = size_preprocessed.to_bytes(*INTEGER_TO_BYTES)\
-            + arr_preprocessed
+        arr_preprocessed = np.array(data)
+        f = BytesIO()
+        np.save(f,arr_preprocessed)
+        f.seek(0)
+        out = f.read()
+        size_preprocessed = len(out)
+        payload_image = size_preprocessed.to_bytes(*INTEGER_TO_BYTES) + out
 
         payload = payload_time + payload_image
         self.socket.sendall(payload)

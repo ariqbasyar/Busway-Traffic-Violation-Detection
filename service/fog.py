@@ -7,7 +7,7 @@ import torch
 
 from pathlib import Path
 from models.experimental import attempt_load
-from classes import get_fog_type
+from classes import get_fog_type, INTEGER_TO_BYTES
 
 os.environ['TZ'] = 'Asia/Jakarta'
 time.tzset()
@@ -35,8 +35,15 @@ PORT = 5000
 s = socket.socket()
 s.connect((HOST, PORT))
 
-for filename in os.listdir(images):
+filenames = os.listdir(images)
+
+s.sendall((len(filenames)).to_bytes(*INTEGER_TO_BYTES))
+
+for filename in filenames:
+    print(filename)
     img = cv2.imread(str(images / filename))
     Detection = get_fog_type(_type)
     detection = Detection(img,device,lane_model,vehicle_model,s)
     detection.perform_detection()
+
+s.close()
