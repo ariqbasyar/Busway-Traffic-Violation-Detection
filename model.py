@@ -78,3 +78,9 @@ def get_busway_box_from_prediction(pred):
     convex_hull = MultiPoint(X).convex_hull
     return convex_hull
   return None
+
+def to_point(points):
+    res = []
+    for point in points:
+        res.append(Point(*point))
+    return res

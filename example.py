@@ -12,10 +12,8 @@ from models.experimental import attempt_load
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
 
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+print(f'ROOT in {ROOT}')
 WEIGHT = ROOT / 'weights'
 
 weight = WEIGHT / 'best-yolov5m-400epochs.pt'
@@ -26,8 +24,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'using {device}')
 model = attempt_load(weight, map_location=device)
 
+IMAGES = ROOT / 'dataset/preprocessed_512x512'
 idx = '%03d.jpg' % random_state.randint(0,62)
-main_img = cv2.imread(f'../../dataset/preprocessed_512x512/{idx}')
+main_img = cv2.imread(str(IMAGES / idx))
 
 preprocessed = preprocess(main_img,device)
 start = time()
