@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import torch
 
-from utils.plots import Annotator, colors
-from utils.general import non_max_suppression
+from model.utils.plots import Annotator, colors
+from model.utils.general import non_max_suppression
 from shapely.geometry import MultiPoint
 
 def preprocess(main_img, device):
