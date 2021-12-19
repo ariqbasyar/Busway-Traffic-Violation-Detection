@@ -91,4 +91,4 @@ for i in range(amount_of_files):
                         lane_model=lane_model,vehicle_model=vehicle_model)
     detection.perform_detection()
 
-    del detection, next_data
+    del Detection, detection, next_data

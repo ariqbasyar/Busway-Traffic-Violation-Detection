@@ -78,9 +78,9 @@ class OnlyGetViolations:
             if self.lane_box.intersects(point):
                 self.violating_vehicles.append(label)
         print(Counter(self.violating_vehicles))
-        self.end = time()
 
-class OnlySendPreprocess:
+class FogOnlyPreprocessing(BaseDetection,
+                            OnlyPreprocess):
     def send(self):
         payload_time = self.start.to_bytes(*INTEGER_TO_BYTES)
 
@@ -98,9 +98,6 @@ class OnlySendPreprocess:
         payload = payload_time + payload_image
         self.socket.sendall(payload)
 
-class FogOnlyPreprocessing(BaseDetection,
-                            OnlyPreprocess,
-                            OnlySendPreprocess):
     def perform_detection(self):
         self.preprocess()
         self.send()
@@ -115,17 +112,89 @@ class ServerOnlyDetect(BaseDetection,
             data.seek(0)
             data = np.load(data,allow_pickle=True)
             data = torch.from_numpy(data).to(kwargs.get('device'))
-        except ValueError:
+        except:
             data = None
         super().__init__(None,preprocessed=data,**kwargs)
+
+    def get_violations(self):
+        super().get_violations()
+        self.end = int(time()*1E3)
 
     def perform_detection(self):
         self.detect_car()
         self.detect_lane()
         self.get_violations()
 
+class FogFullDetection(BaseDetection,
+                        OnlyPreprocess,
+                        OnlyDetectCar,
+                        OnlyDetectLane,
+                        OnlyGetViolations):
+    def send(self):
+        payload_time = self.start.to_bytes(*INTEGER_TO_BYTES)
+
+        payload_violation = bytes(self.violating_vehicles)
+        size_payload_violation = len(payload_violation)
+        payload_violation_final =\
+            size_payload_violation.to_bytes(*INTEGER_TO_BYTES) + payload_violation
+
+        payload = payload_time + payload_violation_final
+        self.socket.sendall(payload)
+
+    def perform_detection(self):
+        self.preprocess()
+        self.detect_car()
+        self.detect_lane()
+        self.get_violations()
+        self.send()
+
+class ServerRecvViolation(BaseDetection):
+
+    def __init__(self, raw_data, **kwargs):
+        try:
+            data = list(raw_data)
+        except:
+            data = None
+        super().__init__(data, **kwargs)
+
+        self.end = int(time()*1E3)
+
+    def perform_detection(self):
+        pass
+
+class FogOnlySend(BaseDetection):
+    def perform_detection(self):
+        self.send()
+
+class ServerFullDetection(BaseDetection,
+                            OnlyPreprocess,
+                            OnlyDetectCar,
+                            OnlyDetectLane,
+                            OnlyGetViolations):
+
+    def __init__(self, raw_data, **kwargs):
+        try:
+            data = BytesIO(raw_data)
+            data.seek(0)
+            data = np.load(data,allow_pickle=True)
+        except:
+            data = None
+        super().__init__(data,**kwargs)
+
+    def get_violations(self):
+        super().get_violations()
+        self.end = int(time()*1E3)
+
+    def perform_detection(self):
+        self.preprocess()
+        self.detect_car()
+        self.detect_lane()
+        self.get_violations()
+
 _types = {
     1: (FogOnlyPreprocessing,ServerOnlyDetect),
+    2: (FogFullDetection,ServerRecvViolation),
+    3: (FogOnlySend,ServerFullDetection),
 }
 
 def get_fog_type(_type):
