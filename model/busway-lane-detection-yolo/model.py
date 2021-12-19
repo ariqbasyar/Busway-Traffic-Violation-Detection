@@ -7,7 +7,8 @@ from utils.general import non_max_suppression
 from shapely.geometry import MultiPoint
 
 def preprocess(main_img, device):
-  img = cv2.cvtColor(main_img,cv2.COLOR_BGR2RGB)
+  img = cv2.resize(main_img, (512,512))
+  img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
   img = np.moveaxis(img,-1,0)
   img = torch.from_numpy(img).to(device)
   img = img.float()/255.0  # 0 - 255 to 0.0 - 1.0
@@ -21,12 +22,11 @@ def detect(model,img):
 
     :param torch.nn.Module model: prediction model
     :param PIL.Image.Image img: an image to predict
-    :return pred, label_names:
-      pred: an array of predictions [x0,y0,x1,y1,conf,index_label]
-      label_names: an array [label1,label2,...] of labels
+    :return: an array of predictions [x0,y0,x1,y1,conf,index_label]
   """
   pred = model(img, augment=False)[0]
   pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.25)
+  labels = model.names
 
   items = []
   if len(pred) and pred[0] is not None:
@@ -35,11 +35,11 @@ def detect(model,img):
       x0,y0,x1,y1 = p[:4].tolist()
       conf = float(p[4])
       idx_label = int(p[-1])
-      row = [x0,y0,x1,y1,conf,idx_label]
+      row = [x0,y0,x1,y1,conf,idx_label,labels[idx_label]]
       items.append(row)
-  return items, model.names # the predicted and names
+  return items
 
-def box_label(pred,img,labels):
+def box_label(pred,img):
   """
     Make a box label for an image with
     given prediction [x0,y0,x1,y1,conf,index_label]
@@ -55,9 +55,10 @@ def box_label(pred,img,labels):
     annotator = Annotator(img)
     box = tuple(p[:4])
     conf = p[4]
-    c = p[-1]
-    label = f'{labels[c]} {conf:.2f}'
-    annotator.box_label(box, label, colors(c, True))
+    c = p[5]
+    label = p[-1]
+    text = f'{label} {conf:.2f}'
+    annotator.box_label(box, text, colors(c, True))
   return annotator.result()
 
 def get_middle(pred):
@@ -75,9 +76,5 @@ def get_busway_box_from_prediction(pred):
     X = get_middle(pred)
 
     convex_hull = MultiPoint(X).convex_hull
-    x,y = convex_hull.exterior.xy
-
-    points = np.int32([x,y])
-    points = points.transpose()
-    return points
+    return convex_hull
   return None
