@@ -1,10 +1,14 @@
 import torch
 import numpy as np
 
+from torchvision.utils import save_image
+from PIL import Image
+from io import BytesIO
 from time import time
 from io import BytesIO
+from collections import Counter
 from model import (preprocess, detect, get_busway_box_from_prediction,
-    get_middle, to_point)
+    get_middle, to_point, generate_center_from_rectangle)
 
 BYTES_ARRAY = 16
 ENDIAN = 'little'
@@ -12,8 +16,9 @@ INTEGER_TO_BYTES = (BYTES_ARRAY,ENDIAN)
 
 class BaseDetection:
     def __init__(self,img,device=None,lane_model=None,vehicle_model=None,
-            socket=None,start=None):
+            socket=None,start=None,preprocessed=None):
         self.img = img
+        self.preprocessed = preprocessed
         self.device = device
         if not device:
             self.device = torch.device('cpu')
@@ -25,7 +30,6 @@ class BaseDetection:
         else:
             self.start = start
 
-        self.preprocessed = None
         self.lane_box = None
         self.vehicle_labels = None
         self.vehicle_points = None
@@ -45,23 +49,35 @@ class OnlyPreprocess:
 
 class OnlyDetectLane:
     def detect_lane(self):
+        print('detect lane')
         pred = detect(self.lane_model,self.preprocessed)
         self.lane_box = get_busway_box_from_prediction(pred)
+        print(self.lane_box.exterior.xy)
 
 class OnlyDetectCar:
     def detect_car(self):
+        print('detect car')
+        # print(type(self.preprocessed))
+        # print(self.preprocessed.shape)
+        # filename = f'{np.random.randint(100)}.jpg'
+        # print(filename)
+        # save_image(self.preprocessed.cpu()[0], filename)
         pred = detect(self.vehicle_model,self.preprocessed)
+        pred = [i for i in pred if i[6] != 'jalur_busway']
+        print(pred)
         self.vehicle_labels = np.array(pred)[:,-1]
         self.vehicle_points = get_middle(pred)
         self.vehicle_points = to_point(self.vehicle_points)
 
 class OnlyGetViolations:
     def get_violations(self):
-        self.count_violations = 0
+        print('get violations')
+        self.violating_vehicles = []
         for point,label in zip(self.vehicle_points,self.vehicle_labels):
             if label == 'bus': continue
             if self.lane_box.intersects(point):
-                self.count_violations += 1
+                self.violating_vehicles.append(label)
+        print(Counter(self.violating_vehicles))
         self.end = time()
 
 class OnlySendPreprocess:
@@ -93,7 +109,20 @@ class ServerOnlyDetect(BaseDetection,
                         OnlyDetectLane,
                         OnlyDetectCar,
                         OnlyGetViolations):
-    pass
+    def __init__(self, raw_data, **kwargs):
+        try:
+            data = BytesIO(raw_data)
+            data.seek(0)
+            data = np.load(data,allow_pickle=True)
+            data = torch.from_numpy(data).to(kwargs.get('device'))
+        except ValueError:
+            data = None
+        super().__init__(None,preprocessed=data,**kwargs)
+
+    def perform_detection(self):
+        self.detect_car()
+        self.detect_lane()
+        self.get_violations()
 
 _types = {
     1: (FogOnlyPreprocessing,ServerOnlyDetect),

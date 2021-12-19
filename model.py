@@ -84,3 +84,6 @@ def to_point(points):
     for point in points:
         res.append(Point(*point))
     return res
+
+def generate_center_from_rectangle(x0, y0, x1, y1):
+    return (x0+(x1-x0)/2, y0+(y1-y0)/2)
