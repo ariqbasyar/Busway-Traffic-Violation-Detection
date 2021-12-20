@@ -57,6 +57,9 @@ class OnlyPreprocess:
 class OnlyDetectLane:
     def detect_lane(self):
         pred = detect(self.lane_model,self.preprocessed)
+        if len(pred) == 0:
+            self.lane_box = None
+            return
         self.lane_box = get_busway_box_from_prediction(pred)
 
 class OnlyDetectCar:
@@ -158,7 +161,9 @@ class ServerRecvViolation(BaseDetection):
 
     def __init__(self, raw_data, **kwargs):
         try:
-            data = list(raw_data)
+            data = BytesIO(raw_data)
+            data.seek(0)
+            data = np.load(data,allow_pickle=True)
         except:
             data = None
         super().__init__(data, **kwargs)
