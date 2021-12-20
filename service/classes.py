@@ -1,4 +1,6 @@
 import torch
+import psutil
+import GPUtil
 import numpy as np
 
 from torchvision.utils import save_image
@@ -35,6 +37,11 @@ class BaseDetection:
         self.vehicle_points = None
         self.count_violations = -1
         self.end = None
+        self.cpu_util = None
+        self.mem_util = None
+
+    def get_data(self):
+        print(f'{self.start},{self.end}')
 
     def perform_detection(self):
         self.preprocess()
@@ -49,35 +56,29 @@ class OnlyPreprocess:
 
 class OnlyDetectLane:
     def detect_lane(self):
-        print('detect lane')
         pred = detect(self.lane_model,self.preprocessed)
         self.lane_box = get_busway_box_from_prediction(pred)
-        print(self.lane_box.exterior.xy)
 
 class OnlyDetectCar:
     def detect_car(self):
-        print('detect car')
-        # print(type(self.preprocessed))
-        # print(self.preprocessed.shape)
-        # filename = f'{np.random.randint(100)}.jpg'
-        # print(filename)
-        # save_image(self.preprocessed.cpu()[0], filename)
         pred = detect(self.vehicle_model,self.preprocessed)
-        pred = [i for i in pred if i[6] != 'jalur_busway']
-        print(pred)
+        pred = [i for i in pred if i[6] != 'jalur_busway' and i[6] != 'bus']
+        if len(pred) == 0:
+            self.vehicle_labels = []
+            self.vehicle_points = []
         self.vehicle_labels = np.array(pred)[:,-1]
         self.vehicle_points = get_middle(pred)
         self.vehicle_points = to_point(self.vehicle_points)
 
 class OnlyGetViolations:
     def get_violations(self):
-        print('get violations')
         self.violating_vehicles = []
+        if self.lane_box is None:
+            return
         for point,label in zip(self.vehicle_points,self.vehicle_labels):
             if label == 'bus': continue
             if self.lane_box.intersects(point):
                 self.violating_vehicles.append(label)
-        print(Counter(self.violating_vehicles))
 
 class FogOnlyPreprocessing(BaseDetection,
                             OnlyPreprocess):
@@ -133,10 +134,14 @@ class FogFullDetection(BaseDetection,
     def send(self):
         payload_time = self.start.to_bytes(*INTEGER_TO_BYTES)
 
-        payload_violation = bytes(self.violating_vehicles)
-        size_payload_violation = len(payload_violation)
+        payload_violation = np.array(self.violating_vehicles)
+        f = BytesIO()
+        np.save(f,payload_violation)
+        f.seek(0)
+        out = f.read()
+        size_payload_violation = len(out)
         payload_violation_final =\
-            size_payload_violation.to_bytes(*INTEGER_TO_BYTES) + payload_violation
+            size_payload_violation.to_bytes(*INTEGER_TO_BYTES) + out
 
         payload = payload_time + payload_violation_final
         self.socket.sendall(payload)
@@ -156,6 +161,7 @@ class ServerRecvViolation(BaseDetection):
         except:
             data = None
         super().__init__(data, **kwargs)
+        print(data)
 
         self.end = int(time()*1E3)
 
