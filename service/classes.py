@@ -66,6 +66,7 @@ class OnlyDetectCar:
         if len(pred) == 0:
             self.vehicle_labels = []
             self.vehicle_points = []
+            return
         self.vehicle_labels = np.array(pred)[:,-1]
         self.vehicle_points = get_middle(pred)
         self.vehicle_points = to_point(self.vehicle_points)
@@ -161,7 +162,7 @@ class ServerRecvViolation(BaseDetection):
         except:
             data = None
         super().__init__(data, **kwargs)
-        print(data)
+        # print(data)
 
         self.end = int(time()*1E3)
 
