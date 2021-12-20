@@ -10,7 +10,7 @@ from time import time
 from io import BytesIO
 from collections import Counter
 from model import (preprocess, detect, get_busway_box_from_prediction,
-    get_middle, to_point, generate_center_from_rectangle)
+    get_middle, to_point)
 
 BYTES_ARRAY = 16
 ENDIAN = 'little'
@@ -170,6 +170,20 @@ class ServerRecvViolation(BaseDetection):
         pass
 
 class FogOnlySend(BaseDetection):
+
+    def send(self):
+        payload_time = self.start.to_bytes(*INTEGER_TO_BYTES)
+
+        f = BytesIO()
+        np.save(f,self.img)
+        f.seek(0)
+        out = f.read()
+        size_img = len(out)
+        payload_image = size_img.to_bytes(*INTEGER_TO_BYTES) + out
+
+        payload = payload_time + payload_image
+        self.socket.sendall(payload)
+
     def perform_detection(self):
         self.send()
 

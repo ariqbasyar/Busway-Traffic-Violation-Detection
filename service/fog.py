@@ -29,7 +29,7 @@ vehicle_model = attempt_load(vehicle_weight, map_location=device)
 
 _type = 1 # see classes.get_fog_type
 
-HOST = '192.168.1.250'
+HOST = '127.0.0.1'
 PORT = 5000
 
 s = socket.socket()

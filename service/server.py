@@ -27,7 +27,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 lane_model = attempt_load(lane_weight, map_location=device)
 vehicle_model = attempt_load(vehicle_weight, map_location=device)
 
-HOST = '192.168.1.250'
+HOST = '127.0.0.1'
 PORT = 5000
 
 s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -54,15 +54,14 @@ print(amount_of_files)
 
 data = data[BYTES_ARRAY:]
 
+print('start,end')
 for i in range(amount_of_files):
-    print('='*50)
     # get the time
     while len(data) < BYTES_ARRAY:
         _data = conn.recv(4096)
         data += _data
     time_payload = data[:BYTES_ARRAY]
     time_payload = int.from_bytes(time_payload,ENDIAN)
-    print(time_payload)
 
     data = data[BYTES_ARRAY:]
 
@@ -90,5 +89,6 @@ for i in range(amount_of_files):
     detection = Detection(next_data, start=time_payload, device=device,
                         lane_model=lane_model,vehicle_model=vehicle_model)
     detection.perform_detection()
+    detection.get_data()
 
     del Detection, detection, next_data
