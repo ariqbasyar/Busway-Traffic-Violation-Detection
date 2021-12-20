@@ -213,9 +213,9 @@ class ServerFullDetection(BaseDetection,
         self.get_violations()
 
 _types = {
-    1: (FogOnlyPreprocessing,ServerOnlyDetect),
-    2: (FogFullDetection,ServerRecvViolation),
-    3: (FogOnlySend,ServerFullDetection),
+    1: (FogOnlySend,ServerFullDetection),
+    2: (FogOnlyPreprocessing,ServerOnlyDetect),
+    3: (FogFullDetection,ServerRecvViolation),
 }
 
 def get_fog_type(_type):
