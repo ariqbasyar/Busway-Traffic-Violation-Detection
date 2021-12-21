@@ -1,6 +1,4 @@
 import torch
-import psutil
-import GPUtil
 import numpy as np
 
 from torchvision.utils import save_image
