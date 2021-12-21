@@ -16,7 +16,7 @@ ROOT = FILE.parents[0]
 print(f'ROOT in {ROOT}')
 WEIGHT = ROOT / 'weights'
 
-weight = WEIGHT / 'best-yolov5m-400epochs.pt'
+weight = WEIGHT / 'yolov5m-lane-400epochs.pt'
 
 random_state = np.random.RandomState(42)
 
@@ -36,14 +36,14 @@ print(f'inferenced in {(time() - start)*1E3:.2f}ms')
 # plt.imshow(labeled_img)
 
 lane_box = get_busway_box_from_prediction(pred)
-x,y = lane_box.exterior.xy
-
-points = np.int32([x,y])
-points = points.transpose()
-print(f'amount of convex hull points: {len(points)}')
-if points is None:
+if lane_box is None:
   print("Cant make polygon from the prediction")
-# else:
+else:
+  x,y = lane_box.exterior.xy
+
+  points = np.int32([x,y])
+  points = points.transpose()
+  print(f'amount of convex hull points: {len(points)}')
 #   _img = main_img.copy()
 #   cv2.fillPoly(_img, [points], (255,0,0))
 #   alpha = 0.4

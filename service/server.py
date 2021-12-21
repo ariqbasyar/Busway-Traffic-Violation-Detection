@@ -19,7 +19,7 @@ images = dataset_root / 'preprocessed_images'
 
 WEIGHT = ROOT / 'weights'
 
-lane_weight = WEIGHT / 'best-yolov5m-400epochs.pt'
+lane_weight = WEIGHT / 'yolov5m-lane-400epochs.pt'
 vehicle_weight = WEIGHT / 'yolov5m-car-detection.pt'
 
 print('Loading model...')
